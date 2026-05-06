@@ -94,7 +94,6 @@ async def run_prediction(image_bytes: bytes) -> Dict[str, Any]:
     
     def predict():
         img_array = preprocess_image(image_bytes)
-        # Run ONNX inference
         input_name = session.get_inputs()[0].name
         prediction = session.run(None, {input_name: img_array})[0][0][0]
         return float(prediction)
@@ -121,9 +120,10 @@ async def run_prediction(image_bytes: bytes) -> Dict[str, Any]:
         logger.error(f"Prediction failed: {e}")
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
-# Serve static files (if you have any CSS/JS files in static folder)
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+# Serve static files if they exist
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -133,21 +133,46 @@ async def serve_frontend():
         current_dir = Path(__file__).parent
         index_path = current_dir / "index.html"
         
+        logger.info(f"Looking for index.html at: {index_path}")
+        
         if index_path.exists():
             with open(index_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
+            
+            # Replace the API_BASE_URL in HTML if needed
+            # This ensures the HTML uses relative URLs
+            html_content = html_content.replace(
+                'const API_BASE_URL = "http://127.0.0.1:8000";',
+                'const API_BASE_URL = "";'
+            )
+            
+            logger.info("Successfully loaded index.html")
             return HTMLResponse(content=html_content)
         else:
-            logger.warning(f"index.html not found at {index_path}")
-            return HTMLResponse(content="""
+            logger.error(f"index.html not found at {index_path}")
+            # List files in directory for debugging
+            files = list(current_dir.glob("*"))
+            logger.info(f"Files in directory: {[f.name for f in files]}")
+            
+            return HTMLResponse(content=f"""
             <html>
-                <body>
+                <body style="font-family: Arial; padding: 20px;">
                     <h1>Malaria Detection API</h1>
                     <p>API is running but index.html not found.</p>
-                    <p>Expected location: {}</p>
+                    <p>Expected location: {index_path}</p>
+                    <p>Files in current directory:</p>
+                    <ul>
+                        {"".join([f"<li>{f.name}</li>" for f in files])}
+                    </ul>
+                    <hr>
+                    <h2>API Endpoints:</h2>
+                    <ul>
+                        <li><a href="/api/health">/api/health</a> - Health check</li>
+                        <li><a href="/docs">/docs</a> - API Documentation</li>
+                    </ul>
                 </body>
             </html>
-            """.format(index_path))
+            """)
     except Exception as e:
         logger.error(f"Error serving frontend: {e}")
         return HTMLResponse(content=f"<h1>Error loading frontend</h1><p>{str(e)}</p>")
