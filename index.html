@@ -484,7 +484,7 @@
         <div class="panel-header">
             <h1><i class="fas fa-microscope"></i> Malaria Scanner <span class="badge-research">END-TO END DEEP LEARNING MALARIA DIAGNOSIS</span></h1>
             <p style="font-size: 0.7rem; opacity:0.8; margin-top: 5px;">
-                <span id="apiStatusIndicator"><span class="status-badge status-offline"></span> Checking API...</span>
+                
                 . Computer Vision . CNN . Medical Imaging
             </p>
         </div>
@@ -718,25 +718,7 @@
         lightbox.classList.remove('active');
     }
 
-    // Check API connection on load
-    async function checkAPIConnection() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.status === 'healthy' || data.model_loaded) {
-                    apiStatusSpan.innerHTML = '<span class="status-badge status-online"></span> API Online · Model Ready';
-                } else {
-                    apiStatusSpan.innerHTML = '<span class="status-badge status-offline"></span> API Degraded';
-                }
-            } else {
-                apiStatusSpan.innerHTML = '<span class="status-badge status-offline"></span> API Offline (Demo Mode)';
-            }
-        } catch (error) {
-            console.warn('API connection failed:', error);
-            apiStatusSpan.innerHTML = '<span class="status-badge status-offline"></span> API Offline (Demo Mode)';
-        }
-    }
+
 
     // Upload handlers
     uploadArea.addEventListener('click', () => fileInput.click());
