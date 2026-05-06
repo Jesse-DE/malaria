@@ -675,7 +675,7 @@
 </div>
 
 <script>
-    // API Configuration
+    // API Configuration - using relative path for same-origin requests
     const API_BASE_URL = '';
     
     // DOM Elements
@@ -685,7 +685,6 @@
     const analyzeBtn = document.getElementById('analyzeBtn');
     const loaderDiv = document.getElementById('loader');
     const resultCard = document.getElementById('resultCard');
-    const apiStatusSpan = document.getElementById('apiStatusIndicator');
     
     let currentFile = null;
 
@@ -701,8 +700,6 @@
         const lightbox = document.getElementById('lightbox');
         lightbox.classList.remove('active');
     }
-
-
 
     // Upload handlers
     uploadArea.addEventListener('click', () => fileInput.click());
@@ -758,7 +755,8 @@
         formData.append('file', currentFile);
 
         try {
-            const response = await fetch(`/predict`, { ... }), {
+            // FIXED: Removed the incorrect spread operator and closing parenthesis
+            const response = await fetch('/predict', {
                 method: 'POST',
                 body: formData
             });
@@ -832,8 +830,9 @@
                 <div style="margin-top: 0.5rem; color: #ff7b7b;">Prediction Error</div>
                 <div style="font-size: 0.75rem; margin-top: 0.5rem;">${message}</div>
                 <div style="font-size: 0.7rem; margin-top: 0.8rem; color: #9cb3d9;">
-                    Ensure backend server is running:<br>
-                    <code style="background: #000; padding: 2px 4px; border-radius: 4px;">python app.py</code>
+                    Debug Info:<br>
+                    - Backend URL: ${window.location.origin}<br>
+                    - Check if model is loaded in Render logs
                 </div>
             </div>
         `;
@@ -850,6 +849,29 @@
         });
     }
 
+    // Check API connection on load
+    async function checkAPIConnection() {
+        try {
+            const response = await fetch('/api/health');
+            if (response.ok) {
+                const data = await response.json();
+                console.log('API Status:', data);
+                if (data.model_loaded) {
+                    console.log('✅ Model loaded successfully');
+                } else {
+                    console.warn('⚠️ Model not loaded. Check Render logs for ONNX model errors.');
+                }
+            } else {
+                console.error('API health check failed:', response.status);
+            }
+        } catch (error) {
+            console.error('Cannot connect to API:', error);
+        }
+    }
+    
+    // Initialize
+    checkAPIConnection();
+</script>
     // Initialize
     checkAPIConnection();
 </script>
