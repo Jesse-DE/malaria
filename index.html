@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Malaria AI Scanner | Deep Learning Research</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #0c1445 100%);
+            color: #f0f4ff;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .research-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 0.9fr;
+            gap: 1.8rem;
+        }
+
+        /* LEFT PANEL: AI Scanner */
+        .scanner-panel {
+            background: rgba(12, 20, 35, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+
+        .panel-header {
+            padding: 1.2rem 1.5rem;
+            background: linear-gradient(95deg, rgba(0, 150, 255, 0.2), rgba(0, 40, 80, 0.4));
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        .panel-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #5bd7ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-research {
+            background: #0e2a3b;
+            border-radius: 40px;
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+            color: #7ad0ff;
+            border: 0.5px solid cyan;
+        }
+
+        .scan-area {
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        .upload-zone {
+            border: 1.5px dashed rgba(0, 210, 255, 0.6);
+            background: rgba(0, 20, 40, 0.5);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        .upload-zone:hover {
+            border-color: #0ff;
+            background: rgba(0, 180, 230, 0.15);
+            transform: scale(0.98);
+        }
+
+        .preview-container {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        #previewImage {
+            max-width: 100%;
+            max-height: 220px;
+            object-fit: contain;
+            border-radius: 1rem;
+            display: none;
+            border: 2px solid cyan;
+            box-shadow: 0 0 15px rgba(0,255,255,0.3);
+        }
+
+        .analyze-btn {
+            width: 100%;
+            background: linear-gradient(95deg, #00a6ff, #004e92);
+            border: none;
+            padding: 0.9rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 2rem;
+            color: white;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px #00a6ff80;
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 0.8rem;
+            background: rgba(0,0,0,0.4);
+            border-radius: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #0ff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-card {
+            margin-top: 1rem;
+            background: #07121fcc;
+            border-radius: 1rem;
+            padding: 1rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .confidence-bar {
+            height: 10px;
+            background: #1e2a3e;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .fill-level {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #0ff, #3b82f6);
+            transition: width 0.6s ease;
+        }
+
+        .warning-badge {
+            background: #dc2626;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+
+        .treatment-box {
+            background: #021a2a;
+            border-radius: 0.8rem;
+            padding: 0.8rem;
+            margin-top: 0.8rem;
+            border-left: 3px solid #0ff;
+        }
+
+        .funding-note {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            background: rgba(0, 40, 60, 0.5);
+            border-radius: 0.8rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #9cb3d9;
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
+        }
+
+        .funding-note i {
+            color: #0ff;
+            margin-right: 6px;
+        }
+
+        /* RIGHT PANEL: Research Highlights */
+        .research-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .research-card {
+            background: rgba(8, 16, 28, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 1.2rem;
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            overflow: hidden;
+            padding: 1.2rem;
+            transition: transform 0.2s;
+        }
+
+        .research-card:hover {
+            transform: translateX(5px);
+            border-color: rgba(0, 255, 255, 0.3);
+        }
+
+        .research-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            border-left: 4px solid #0ff;
+            padding-left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .paper-title {
+            font-size: 0.9rem;
+            color: #5bd7ff;
+            margin-bottom: 0.8rem;
+            font-style: italic;
+        }
+
+        .author {
+            font-size: 0.8rem;
+            color: #9cb3d9;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .abstract-text {
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #cbd5e6;
+            text-align: justify;
+        }
+
+        /* Exact Performance Table from Paper */
+        .performance-table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .performance-table {
+            width: 100%;
+            font-size: 0.7rem;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.8rem;
+        }
+
+        .performance-table caption {
+            caption-side: bottom;
+            font-size: 0.65rem;
+            color: #9cb3d9;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .performance-table th, .performance-table td {
+            padding: 0.6rem 0.4rem;
+            text-align: center;
+            border: 1px solid rgba(0, 255, 255, 0.15);
+        }
+
+        .performance-table th {
+            background: rgba(0, 166, 255, 0.25);
+            color: #5bd7ff;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        .performance-table td {
+            color: #cbd5e6;
+        }
+
+        .highlight-row {
+            background: rgba(0, 255, 255, 0.12);
+        }
+
+        .highlight-row td {
+            font-weight: 600;
+            color: #0ff;
+        }
+
+        .metric-highlight {
+            color: #0ff;
+            font-weight: 700;
+        }
+
+        /* Figure Styles */
+        .figure-container {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .figure-img {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 0.8rem;
+            background: #0a0f1c;
+            padding: 0.5rem;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .figure-img:hover {
+            transform: scale(1.02);
+            border-color: #0ff;
+        }
+
+        .figure-caption {
+            font-size: 0.65rem;
+            color: #9cb3d9;
+            margin-top: 0.3rem;
+            font-style: italic;
+        }
+
+        .figure-badge {
+            display: inline-block;
+            background: rgba(0, 166, 255, 0.2);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.6rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Lightbox for figures */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 0.5rem;
+            border: 2px solid #0ff;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            margin-top: 0.8rem;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.6rem;
+            border-radius: 0.8rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0ff;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #9cb3d9;
+        }
+
+        .citation-box {
+            background: #0a0f1c;
+            padding: 0.8rem;
+            border-radius: 0.8rem;
+            font-family: monospace;
+            font-size: 0.65rem;
+            color: #9cb3d9;
+            border-left: 3px solid #0ff;
+        }
+
+        button.copy-btn {
+            background: rgba(0,166,255,0.2);
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 0.5rem;
+            color: #0ff;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+            transition: 0.2s;
+        }
+
+        button.copy-btn:hover {
+            background: rgba(0,166,255,0.4);
+        }
+
+        .model-arch {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.8rem;
+        }
+
+        .arch-tag {
+            background: rgba(0,166,255,0.15);
+            padding: 0.3rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            border: 1px solid rgba(0,255,255,0.3);
+        }
+
+        .status-badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-online { background: #16a34a; box-shadow: 0 0 5px #16a34a; }
+        .status-offline { background: #dc2626; }
+
+        @media (max-width: 950px) {
+            .research-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="research-container">
+    <!-- LEFT PANEL: AI SCANNER DEMO -->
+    <div class="scanner-panel">
+        <div class="panel-header">
+            <h1><i class="fas fa-microscope"></i> Malaria Scanner <span class="badge-research">END-TO END DEEP LEARNING MALARIA DIAGNOSIS</span></h1>
+            <p style="font-size: 0.7rem; opacity:0.8; margin-top: 5px;">
+                <span id="apiStatusIndicator"><span class="status-badge status-offline"></span> Checking API...</span>
+                . Computer Vision . CNN . Medical Imaging
+            </p>
+        </div>
+        <div class="scan-area">
+            <div class="upload-zone" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem;"></i>
+                <div style="margin-top: 8px;">Upload blood smear image</div>
+                <div style="font-size: 0.7rem;">JPG, PNG (max 10MB)</div>
+                <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" hidden>
+            </div>
+            <div class="preview-container">
+                <img id="previewImage" alt="Blood smear preview">
+            </div>
+            <button class="analyze-btn" id="analyzeBtn"><i class="fas fa-brain"></i> Run analysis</button>
+            <div id="loader" class="loader"><div class="spinner"></div> Analyzing with Custom CNN...</div>
+            <div id="resultCard" class="result-card" style="display: none;"></div>
+            
+            
+        </div>
+ 
+    </div>
+
+  
+
+    <!-- RIGHT PANEL: RESEARCH PAPER HIGHLIGHTS -->
+    <div class="research-panel">
+        <div class="research-card">
+            <h3><i class="fas fa-file-alt"></i> Underlying Research</h3>
+            <div class="paper-title">"End-to-End Deep Learning Method for Automated Malaria Diagnosis using Blood Smear Images"</div>
+            <div class="author"><i class="fas fa-user-graduate"></i> Esaie Duftimana, University of Rwanda</div>
+            <div class="abstract-text">
+                <strong>Abstract:</strong> This study presents an end-to-end deep learning framework for automated malaria diagnosis from blood smear images using 27,558 microscopic images. A Custom CNN was designed and benchmarked against VGG16, ResNet50, and InceptionV3 with transfer learning. The custom CNN and Fusion CNN achieved <strong class="metric-highlight">96% accuracy</strong>, offering robust, scalable detection of parasitized cells as an alternative to manual microscopy.
+            </div>
+        </div>
+
+        <!-- EXACT PERFORMANCE TABLE FROM PAPER (Table 1) -->
+        <div class="research-card">
+            <h3><i class="fas fa-chart-simple"></i> Performance Comparison of CNN Models</h3>
+            <div class="performance-table-container">
+                <table class="performance-table">
+                    <caption>Performance comparison for malaria blood smear image classification</caption>
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Model</th>
+                            <th colspan="3">Parasitized</th>
+                            <th colspan="3">Uninfected</th>
+                            <th rowspan="2">Accuracy</th>
+                        </tr>
+                        <tr>
+                            <th>Precision</th><th>Recall</th><th>F1-score</th>
+                            <th>Precision</th><th>Recall</th><th>F1-score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>InceptionV3</td>
+                            <td>0.91</td><td>0.95</td><td>0.93</td>
+                            <td>0.95</td><td>0.91</td><td>0.93</td>
+                            <td>93%</td>
+                        </tr>
+                        <tr>
+                            <td>VGG16</td>
+                            <td>0.88</td><td>0.84</td><td>0.86</td>
+                            <td>0.84</td><td>0.88</td><td>0.86</td>
+                            <td>86%</td>
+                        </tr>
+                        <tr>
+                            <td>ResNet50</td>
+                            <td>0.71</td><td>0.09</td><td>0.15</td>
+                            <td>0.51</td><td>0.96</td><td>0.67</td>
+                            <td>53%</td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><strong>Custom CNN</strong></td>
+                            <td><strong>0.98</strong></td><td><strong>0.95</strong></td><td><strong>0.96</strong></td>
+                            <td><strong>0.95</strong></td><td><strong>0.98</strong></td><td><strong>0.97</strong></td>
+                            <td><strong class="metric-highlight">96%</strong></td>
+                        </tr>
+                        <tr class="highlight-row">
+                            <td><strong>Fusion CNN</strong></td>
+                            <td><strong>0.98</strong></td><td><strong>0.93</strong></td><td><strong>0.95</strong></td>
+                            <td><strong>0.93</strong></td><td><strong>0.98</strong></td><td><strong>0.96</strong></td>
+                            <td><strong class="metric-highlight">96%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="model-arch">
+                <span class="arch-tag"><i class="fas fa-microchip"></i> 8 Conv Layers</span>
+                <span class="arch-tag"><i class="fas fa-project-diagram"></i> Fusion CNN (Custom + InceptionV3)</span>
+                <span class="arch-tag"><i class="fas fa-chart-line"></i> 20 Epochs · Adam lr=0.001</span>
+            </div>
+        </div>
+
+        <!-- Figure 1: Sample Images from Dataset -->
+        <div class="research-card">
+            <h3><i class="fas fa-image"></i> Sample Dataset Images</h3>
+            <div class="figure-container">
+                <img src="Samples.png" 
+                     alt="Sample images from the dataset showing healthy and parasitized blood cells"
+                     class="figure-img"
+                     onclick="openLightbox(this.src)"
+                     onerror="this.src='https://via.placeholder.com/600x400/0a0f1c/0ff?text=Figure+1:+Dataset+Samples'">
+                <div class="figure-caption">
+                    <i class="fas fa-info-circle"></i> Sample images from the dataset, showing both healthy and parasitized blood cells.
+                    <br><small>Click image to enlarge</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- CNN Architecture -->
+        <div class="research-card">
+            <h3><i class="fas fa-project-diagram"></i> Custom CNN Architecture</h3>
+            <div class="figure-badge"><i class="fas fa-cogs"></i> 8 Convolutional Layers Design</div>
+            <div class="figure-container">
+                <img src="Custom_cnn.png"
+                     alt="CNN with 8 convolutional layers architecture"
+                     class="figure-img"
+                     onclick="openLightbox(this.src)"
+                     onerror="this.src='https://via.placeholder.com/600x400/0a0f1c/0ff?text=Figure+2:+CNN+Architecture'">
+                <div class="figure-caption">
+                    <i class="fas fa-info-circle"></i> CNN with 8 convolutional layers architecture.
+                    <br><small>Click image to enlarge</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dataset Stats -->
+        <div class="research-card">
+            <h3><i class="fas fa-database"></i> Dataset & Experimental Setup</h3>
+            <div class="stat-grid">
+                <div class="stat-item"><div class="stat-value">27,558</div><div class="stat-label">Total Images</div></div>
+                <div class="stat-item"><div class="stat-value">50/50</div><div class="stat-label">Parasitized/Uninfected</div></div>
+                <div class="stat-item"><div class="stat-value">80/20</div><div class="stat-label">Train/Test Split</div></div>
+                <div class="stat-item"><div class="stat-value">CPU Only</div><div class="stat-label">16GB RAM</div></div>
+            </div>
+        </div>
+
+
+
+        <!-- Figure 2: CNN Architecture -->
+        <div class="research-card">
+            <h3></i> Custom CNN Architecture</h3>
+            <div class="figure-container">
+                <img src="Curves_train.png"
+                     alt="CNN with 8 convolutional layers architecture"
+                     class="figure-img"
+                     onclick="openLightbox(this.src)"
+                     onerror="this.src='https://via.placeholder.com/600x400/0a0f1c/0ff?text=Figure+2:+CNN+Architecture'">
+                <div class="figure-caption">
+                    <i class="fas fa-info-circle"></i> Accuracy and loss curves for training and validation.
+                    <br><small>Click image to enlarge</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Future Work -->
+        <div class="research-card">
+            <h3><i class="fas fa-flask"></i> Future Directions</h3>
+            <div class="abstract-text" style="font-size: 0.75rem;">
+                • Multimodal integration with clinical/demographic data<br>
+                • Attention mechanisms & Vision Transformers<br>
+                • Deployment on resource-constrained devices (mobile diagnostics)<br>
+                • Explainable AI (XAI) for clinical interpretability
+            </div>
+        </div>
+
+        
+        <!-- Citation -->
+        <div class="research-card">
+            <h3><i class="fas fa-quote-right"></i> Cite this Research</h3>
+            <div class="citation-box" id="citationText">
+                Duftimana, E. (2025). End-to-End Deep Learning Method for Automated Malaria Diagnosis using Blood Smear Images. <em>University of Rwanda, College of Science and Technology</em>.
+            </div>
+            <button class="copy-btn" onclick="copyCitation()"><i class="fas fa-copy"></i> Copy Citation</button>
+            <div class="citation-box" style="margin-top: 8px; font-size: 0.6rem;">
+                📄 <strong>BibTeX:</strong><br>
+                @phdthesis{duftimana2025malaria,<br>
+                &nbsp;&nbsp;author = {Duftimana, Esaie},<br>
+                &nbsp;&nbsp;title = {End-to-End Deep Learning Method for Automated Malaria Diagnosis using Blood Smear Images},<br>
+                &nbsp;&nbsp;school = {University of Rwanda},<br>
+                &nbsp;&nbsp;year = {2025}<br>
+                }
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+<!-- Lightbox for figure enlargement -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" alt="Enlarged figure">
+</div>
+
+<!-- NIH Funding Footnote -->
+<div class="funding-note">
+    <i class="fas fa-microscope"></i> We acknowledge the funding from <strong>National Institute of Health (NIH)</strong> 
+    (Grant #s U2RTW012122 and UE5 HL172181) provided through Research training in Data Science for Health in Rwanda,  <br> 
+    collaborative projects between the Regional Centre of Excellence in Biomedical Engineering and E-Health (CEBE), at the 
+    University of Rwanda, African Institute for Mathematical Sciences (AIMS) and Washington University in Saint Louis.  <br> 
+    The statements made, including study design, data acquisition & analysis, and decision to publish are solely the responsibility of the authors.
+    
+</div>
+
+<script>
+    // API Configuration
+    const API_BASE_URL = 'http://127.0.0.1:8000';
+    
+    // DOM Elements
+    const fileInput = document.getElementById('fileInput');
+    const previewImage = document.getElementById('previewImage');
+    const uploadArea = document.getElementById('uploadArea');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loaderDiv = document.getElementById('loader');
+    const resultCard = document.getElementById('resultCard');
+    const apiStatusSpan = document.getElementById('apiStatusIndicator');
+    
+    let currentFile = null;
+
+    // Lightbox functions
+    function openLightbox(src) {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+        lightboxImg.src = src;
+        lightbox.classList.add('active');
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        lightbox.classList.remove('active');
+    }
+
+    // Check API connection on load
+    async function checkAPIConnection() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'healthy' || data.model_loaded) {
+                    apiStatusSpan.innerHTML = '<span class="status-badge status-online"></span> API Online · Model Ready';
+                } else {
+                    apiStatusSpan.innerHTML = '<span class="status-badge status-offline"></span> API Degraded';
+                }
+            } else {
+                apiStatusSpan.innerHTML = '<span class="status-badge status-offline"></span> API Offline (Demo Mode)';
+            }
+        } catch (error) {
+            console.warn('API connection failed:', error);
+            apiStatusSpan.innerHTML = '<span class="status-badge status-offline"></span> API Offline (Demo Mode)';
+        }
+    }
+
+    // Upload handlers
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#00a6ff';
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.style.borderColor = 'rgba(0, 210, 255, 0.6)';
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) handleImage(file);
+        uploadArea.style.borderColor = 'rgba(0, 210, 255, 0.6)';
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) handleImage(e.target.files[0]);
+    });
+
+    function handleImage(file) {
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File too large. Max 10MB.');
+            return;
+        }
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            return;
+        }
+        currentFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            previewImage.style.display = 'block';
+            resultCard.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Prediction
+    analyzeBtn.addEventListener('click', async () => {
+        if (!currentFile) {
+            alert('Please upload a blood smear image first');
+            return;
+        }
+
+        analyzeBtn.disabled = true;
+        loaderDiv.style.display = 'flex';
+        resultCard.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('file', currentFile);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/predict`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Prediction failed');
+            }
+            
+            const data = await response.json();
+            displayResult(data);
+        } catch (error) {
+            console.error('Error:', error);
+            displayError(error.message);
+        } finally {
+            analyzeBtn.disabled = false;
+            loaderDiv.style.display = 'none';
+        }
+    });
+
+    function displayResult(data) {
+        const isInfected = data.prediction === 'Parasitized';
+        const isConfident = data.is_confident !== false;
+        
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <strong><i class="fas fa-diagnoses"></i> Diagnosis Result</strong>
+                <span style="background: ${isInfected ? '#b91c1c' : '#0e8240'}; padding: 4px 12px; border-radius: 32px; font-size: 0.8rem;">
+                    ${isInfected ? '⚠️ INFECTED' : '✅ HEALTHY'}
+                </span>
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 10px;">
+                ${data.summary || (isInfected ? '⚠️ Plasmodium infection detected' : '✅ No malaria parasites detected')}
+            </div>
+            <div class="confidence-bar">
+                <div class="fill-level" style="width: ${data.confidence * 100}%"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 12px;">
+                <span>🧬 Confidence: ${(data.confidence * 100).toFixed(1)}%</span>
+                <span>Raw Score: ${data.raw_score?.toFixed(3) || 'N/A'}</span>
+            </div>
+        `;
+        
+        if (!isConfident) {
+            html += `<div class="warning-badge"><i class="fas fa-exclamation-triangle"></i> ${data.warning || 'Low confidence prediction. Manual review recommended.'}</div>`;
+        }
+        
+        html += `
+            <div class="treatment-box">
+                <strong><i class="fas fa-prescription-bottle"></i> Clinical Guidance</strong>
+                <div style="margin-top: 8px; font-size: 0.8rem;">
+                    ${data.treatment || (isInfected ? 
+                        '• Confirm with rapid diagnostic test (RDT)<br>• Start Artemisinin-based Combination Therapy (ACT)<br>• Monitor for complications' : 
+                        '• No antimalarial treatment required<br>• Test for other febrile illnesses if symptoms persist')}
+                </div>
+                <div style="margin-top: 8px; font-size: 0.7rem; color: #9cb3d9;">
+                    <i class="fas fa-calendar-check"></i> ${data.follow_up || (isInfected ? 'Follow-up in 3 days' : 'Return if symptoms persist >48 hours')}
+                </div>
+            </div>
+        `;
+        
+        resultCard.innerHTML = html;
+        resultCard.style.display = 'block';
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function displayError(message) {
+        resultCard.innerHTML = `
+            <div style="text-align: center; padding: 1rem;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ff7b7b;"></i>
+                <div style="margin-top: 0.5rem; color: #ff7b7b;">Prediction Error</div>
+                <div style="font-size: 0.75rem; margin-top: 0.5rem;">${message}</div>
+                <div style="font-size: 0.7rem; margin-top: 0.8rem; color: #9cb3d9;">
+                    Ensure backend server is running:<br>
+                    <code style="background: #000; padding: 2px 4px; border-radius: 4px;">python app.py</code>
+                </div>
+            </div>
+        `;
+        resultCard.style.display = 'block';
+    }
+
+    function copyCitation() {
+        const text = document.getElementById('citationText').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        });
+    }
+
+    // Initialize
+    checkAPIConnection();
+</script>
+</body>
+</html>
